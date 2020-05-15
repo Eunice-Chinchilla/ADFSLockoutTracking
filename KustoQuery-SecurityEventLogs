@@ -1,0 +1,10 @@
+SecurityEvent
+| where EventID == 411
+| project EventData, Computer, TimeGenerated, EventSourceName 
+| extend p = parse_xml(EventData)
+| extend CorrelationId = tostring(parse_json(tostring(parse_json(tostring(p.EventData)).Data))[0])
+    | join (SigninLogs
+        | where Status.errorCode == "50140" 
+        | project Status, UserDisplayName, UserPrincipalName, UserId, AppDisplayName, ClientAppUsed, AppId, IPAddress, CorrelationId 
+    ) on CorrelationId 
+    | project EventSourceName, Status, UserDisplayName, UserPrincipalName, UserId, AppDisplayName, ClientAppUsed, AppId, IPAddress, TimeGenerated, CorrelationId 

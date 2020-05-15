@@ -1,0 +1,5 @@
+Get-AzureADAuditSignInLogs -Filter "status/errorCode eq 50140"
+
+
+#creates a CSV file with all the results in the location specified
+Get-AzureADAuditSignInLogs -Filter "status/errorCode eq 50140" | Out-File -FilePath "\logs.csv"  	

@@ -1,0 +1,51 @@
+foreach($s in $adfsServers){
+
+    #Get all the events with Event ID 411
+       
+    $_xmlLockoutAdfs = "*[System[EventID=411]]"
+    $eventLogs =  Get-WinEvent -ComputerName $s -LogName Security -FilterXPath       $_xmlLockoutAdfs
+    
+    $eventList = @() #list that holds event objects
+
+    foreach ($event in $eventLogs)
+    {
+
+        $eventObject = New-Object -TypeName psobject #start off empty object
+
+        $message = $event.Message
+        $emailRegEx = "\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b"
+        $message -match $emailRegEx | Out-Null
+
+        
+
+        #add the User Name
+        $eventObject | Add-Member -MemberType NoteProperty -Name Username -Value $Matches.Values
+
+        $activityIDRegEx = "[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]*"
+        $message -match $activityIDRegEx | Out-Null
+
+        #add the activity ID
+        $eventObject | Add-Member -MemberType NoteProperty -Name "Activity ID" -Value $Matches.Values
+      
+        $IPAddressRegEx = "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]*"
+        $message -match $IPAddressRegEx | Out-Null
+
+        #add the IP address
+        $eventObject | Add-Member -MemberType NoteProperty -Name "IP Address" -Value $Matches.Values
+
+        #add the date the event happened
+        $eventObject | Add-Member -MemberType NoteProperty -Name "Date Created" -Value $event.TimeCreated
+
+     
+
+        $eventList += $eventObject #add each event object to a list
+
+        #Now, there is an event object that contains all the relevant information about the event. 
+   
+
+    }
+
+    $eventList | Sort-Object -Property "Username" | Out-File -FilePath "C:Enter your path here\lockouts.csv" -Encoding utf8 
+
+}
+
